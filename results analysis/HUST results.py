@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+
+script_dir = Path(__file__).parent
+root_path = script_dir.parent
+
+if str(root_path) not in sys.path:
+    sys.path.append(str(root_path))
+
 '''
 HUST数据集的结果分析
 
@@ -62,14 +71,8 @@ class Results:
         for i in range(len(lines)):
             line = lines[i]
             if '[train] epoch:1 iter:1 data' in line:
-                train_data_loss.append(float(line.split('data loss:')[1].split(',')[0]))
-                train_PDE_loss.append(float(line.split('PDE loss:')[1].split(',')[0]))
-                train_phy_loss.append(float(line.split('physics loss:')[1].split(',')[0]))
                 train_total_loss.append(float(line.split('total loss:')[1].split('\n')[0]))
             elif '[Train]' in line:
-                train_data_loss.append(float(line.split('data loss:')[1].split(',')[0]))
-                train_PDE_loss.append(float(line.split('PDE loss:')[1].split(',')[0]))
-                train_phy_loss.append(float(line.split('physics loss:')[1].split(',')[0]))
                 train_total_loss.append(float(line.split('total loss:')[1].split('\n')[0]))
             elif '[Valid]' in line:
                 valid_data_loss.append(float(line.split('MSE:')[1].split('\n')[0]))
@@ -110,7 +113,7 @@ class Results:
         '''
         pred_label = np.load(self.pred_label).reshape(-1)
         true_label = np.load(self.true_label).reshape(-1)
-        [MAE, MAPE, MSE, RMSE, R2] = eval_metrix(pred_label, true_label)
+        [MAE, MAPE, MSE, RMSE] = eval_metrix(pred_label, true_label)
 
 
         # 用来保存每个电池的预测结果
@@ -121,7 +124,7 @@ class Results:
         MAPE_list = []
         MSE_list = []
         RMSE_list = []
-        R2_list = []
+
 
         diff = np.diff(true_label)
         split_point = np.where(diff>0.1)[0]
@@ -134,7 +137,7 @@ class Results:
             end = local_minima[i]
             pred_i = pred_label[start:end]
             true_i = true_label[start:end]
-            [MAE_i, MAPE_i, MSE_i, RMSE_i, R2_i] = eval_metrix(pred_i, true_i)
+            [MAE_i, MAPE_i, MSE_i, RMSE_i] = eval_metrix(pred_i, true_i)
             #print('battery {} MAE:{:.4f}, MAPE:{:.4f}, MSE:{:.6f}, RMSE:{:.4f}, R2:{:.4f}'.format(i+1,MAE_i, MAPE_i, MSE_i, RMSE_i,R2_i))
             start = end+1
 
@@ -144,7 +147,7 @@ class Results:
             MAPE_list.append(MAPE_i)
             MSE_list.append(MSE_i)
             RMSE_list.append(RMSE_i)
-            R2_list.append(R2_i)
+
         #print('Mean  MAE:{:.4f}, MAPE:{:.4f}, MSE:{:.6f}, RMSE:{:.4f}, R2:{:.4f}'.format(MAE, MAPE, MSE, RMSE,R2))
         results_dict = {}
         results_dict['pred_label'] = pred_label_list
@@ -153,7 +156,6 @@ class Results:
         results_dict['MAPE'] = MAPE_list
         #results_dict['MSE'] = MSE_list
         results_dict['RMSE'] = RMSE_list
-        results_dict['R2'] = R2_list
         return results_dict
 
 
@@ -176,11 +178,11 @@ class Results:
         for e in range(1, 11):
             res = results.get_test_results(e=e)
             df = pd.DataFrame(res)
-            df = df[['MAE', 'MAPE', 'RMSE', 'R2']]
+            df = df[['MAE', 'MAPE', 'RMSE']]
             df_i_mean = df.mean(axis=0)
             df_mean_values.append(df_i_mean.values)
         df_mean_values = np.array(df_mean_values)
-        df_mean = pd.DataFrame(df_mean_values, columns=['MAE', 'MAPE', 'RMSE', 'R2'])
+        df_mean = pd.DataFrame(df_mean_values, columns=['MAE', 'MAPE', 'RMSE'])
         df_mean.insert(0, column='experiment', value=np.arange(1, 11))
         print(df_mean)
         return df_mean
@@ -196,12 +198,12 @@ class Results:
         for i in range(1,11):
             res = self.get_test_results(i)
             df = pd.DataFrame(res)
-            df = df[['channel','MAE', 'MAPE', 'RMSE', 'R2']]
+            df = df[['channel','MAE', 'MAPE', 'RMSE']]
             df = df.sort_values(by='channel')
             df.reset_index(drop=True, inplace=True)
-            df_value_list.append(df[['MAE','MAPE','RMSE','R2']].values)
+            df_value_list.append(df[['MAE','MAPE','RMSE']].values)
         channel = df['channel']
-        columns = ['MAE', 'MAPE', 'RMSE', 'R2']
+        columns = ['MAE', 'MAPE', 'RMSE']
 
         np_array = np.array(df_value_list)
         np_mean = np.mean(np_array,axis=0)
@@ -215,16 +217,16 @@ class Results:
 
 
 if __name__ == '__main__':
-    root = '../results/HUST results (small sample 5)/'
-    # writer = pd.ExcelWriter('processed results/HUST_results (small sample 5).xlsx')
+    root = './results/HUST results/'
+    writer = pd.ExcelWriter('./results/HUST_results.xlsx')
     results = Results(root)
 
     df_battery_mean = results.get_battery_mean()
     df_experiment_mean = results.get_experiments_mean()
-    # df_battery_mean.to_excel(writer, sheet_name='battery_mean_0', index=False)
-    # df_experiment_mean.to_excel(writer, sheet_name='experiment_mean_0', index=False)
-    #
-    # writer.save()
+    df_battery_mean.to_excel(writer, sheet_name='battery_mean', index=False)
+    df_experiment_mean.to_excel(writer, sheet_name='experiment_mean', index=False)
+    
+    writer._save()
 
 
 

@@ -13,7 +13,7 @@ def get_args():
 
     # scheduler related
     parser.add_argument('--epochs', type=int, default=200, help='epoch')
-    parser.add_argument('--early_stop', type=int, default=10, help='early stop')
+    parser.add_argument('--early_stop', type=int, default=20, help='early stop')
     parser.add_argument('--warmup_epochs', type=int, default=30, help='warmup epoch')
     parser.add_argument('--warmup_lr', type=float, default=2e-3, help='warmup lr')
     parser.add_argument('--lr', type=float, default=1e-2, help='learning rate')
@@ -27,8 +27,8 @@ def get_args():
     parser.add_argument('--F_hidden_dim', type=int, default=60, help='the hidden dim of F')
 
     # loss related
-    parser.add_argument('--alpha', type=float, default=1, help='loss = l_data + alpha * l_PDE + beta * l_physics')
-    parser.add_argument('--beta', type=float, default=0.02, help='loss = l_data + alpha * l_PDE + beta * l_physics')
+    parser.add_argument('--alpha', type=float, default=0.5, help='loss = l_data + alpha * l_PDE + beta * l_physics')
+    parser.add_argument('--beta', type=float, default=0.01, help='loss = l_data + alpha * l_PDE + beta * l_physics')
 
     parser.add_argument('--log_dir', type=str, default='logging.txt', help='log dir, if None, do not save')
     parser.add_argument('--save_folder', type=str, default='results/MIT results', help='save folder')
@@ -63,7 +63,7 @@ def load_MIT_data(args,small_sample=None):
 def main():
     args = get_args()
     for e in range(10):
-        setattr(args, 'save_folder', f'revise_results/MIT results/Experiment{e + 1}')
+        setattr(args, 'save_folder', f'202608/Push/MIT results/Experiment{e + 1}')
         if not os.path.exists(args.save_folder):
             os.makedirs(args.save_folder)
 
@@ -85,6 +85,24 @@ def small_sample():
         pinn.Train(trainloader=dataloader['train'], validloader=dataloader['valid'], testloader=dataloader['test'])
 
 
+def grid_search():
+    args = get_args()
+    for e in range(10):
+        for alpha in [0.5]:
+            for beta in [0.01]:
+                setattr(args, 'alpha', alpha)
+                setattr(args, 'beta', beta)
+                setattr(args, 'save_folder', f'202608/Parameter/MIT results 5/experiment_{e + 1}_alpha_{alpha}_beta_{beta}')
+                if not os.path.exists(args.save_folder):
+                    os.makedirs(args.save_folder)
+
+                dataloader = load_MIT_data(args)
+                pinn = PINN(args)
+                pinn.Train(trainloader=dataloader['train'], validloader=dataloader['valid'], testloader=dataloader['test'])
+                del pinn
+
+
+
 if __name__ == '__main__':
-    pass
-    # main()
+    # pass
+    main()

@@ -27,8 +27,8 @@ def get_args():
     parser.add_argument('--F_hidden_dim', type=int, default=60, help='the hidden dim of F')
 
     # loss related
-    parser.add_argument('--alpha', type=float, default=0.5, help='loss = l_data + alpha * l_PDE + beta * l_physics')
-    parser.add_argument('--beta', type=float, default=0.2, help='loss = l_data + alpha * l_PDE + beta * l_physics')
+    parser.add_argument('--alpha', type=float, default=0.6, help='loss = l_data + alpha * l_PDE + beta * l_physics')
+    parser.add_argument('--beta', type=float, default=0.1, help='loss = l_data + alpha * l_PDE + beta * l_physics')
 
     parser.add_argument('--log_dir', type=str, default='logging.txt', help='log dir, if None, do not save')
     parser.add_argument('--save_folder', type=str, default='results/HUST results', help='save folder')
@@ -73,6 +73,7 @@ def main():
         dataloader = load_HUST_data(args)
         pinn = PINN(args)
         pinn.Train(trainloader=dataloader['train'],validloader=dataloader['valid'],testloader=dataloader['test'])
+        del pinn
 
 
 def small_sample():
@@ -89,6 +90,6 @@ def small_sample():
 
 
 if __name__ == '__main__':
-    pass
-    # main()
-    # small_sample()
+    # pass
+    main()
+
